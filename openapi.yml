@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: go-api-demo
+  version: 0.0.1
+  description: |-
+    An API to provide data to https://www.gavinwoods.co.uk/
+#servers:
+#  - url: http://localhost:8080
+
+paths:
+  /ping:
+    get:
+      summary: Ping the server
+      operationId: ping
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message'
+
+components:
+  schemas:
+    message:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "hello"
+          minLength: 1
