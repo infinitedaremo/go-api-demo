@@ -13,14 +13,37 @@ paths:
       summary: Ping the server
       operationId: ping
       responses:
-        '200':
+        200:
           description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/message'
 
+  /portfolio/{id}:
+    get:
+      summary: Return the portfolio of a given person
+      operationId: getPortfolio
+      parameters:
+        - $ref: '#/components/parameters/personID'
+      responses:
+        200:
+          description: Returned Portfolio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message'
+
 components:
+  parameters:
+    personID:
+      in: path
+      name: id
+      description: The person ID
+      required: true
+      schema:
+        type: integer
+        example: 1
   schemas:
     message:
       type: object

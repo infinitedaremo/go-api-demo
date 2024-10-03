@@ -7,3 +7,6 @@ package server
 type Message struct {
 	Message string `json:"message"`
 }
+
+// PersonID defines model for personID.
+type PersonID = int

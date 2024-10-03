@@ -1,0 +1,10 @@
+quiet: False
+with-expecter: true
+mockname: "{{.InterfaceName}}"
+filename: "{{.MockName}}.go"
+dir: "{{.InterfaceDir}}/_mocks"
+outpkg: mocks
+packages:
+  github.com/infinitedaremo/go-api-demo/internal/app:
+    interfaces:
+      PersonService:

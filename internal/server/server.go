@@ -4,16 +4,18 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/infinitedaremo/go-api-demo/internal/app"
 	middleware "github.com/oapi-codegen/gin-middleware"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	router *gin.Engine
-	logger *zap.Logger
+	router        *gin.Engine
+	logger        *zap.Logger
+	personService app.PersonService
 }
 
-func NewServer(logger *zap.Logger) (*Server, error) {
+func NewServer(logger *zap.Logger, personService app.PersonService) (*Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
@@ -28,6 +30,7 @@ func NewServer(logger *zap.Logger) (*Server, error) {
 	s := Server{
 		r,
 		logger,
+		personService,
 	}
 
 	spec, err := GetSwagger()
@@ -48,6 +51,16 @@ func NewServer(logger *zap.Logger) (*Server, error) {
 
 func (s *Server) Serve(bind string) error {
 	return s.router.Run(bind)
+}
+
+func (s *Server) GetPortfolio(c *gin.Context, id PersonID) {
+	portfolio, err := s.personService.GetPortfolio(c, int64(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, portfolio)
 }
 
 func (s *Server) Ping(c *gin.Context) {

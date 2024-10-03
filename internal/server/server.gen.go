@@ -8,12 +8,14 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
+	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -21,6 +23,9 @@ type ServerInterface interface {
 	// Ping the server
 	// (GET /ping)
 	Ping(c *gin.Context)
+	// Return the portfolio of a given person
+	// (GET /portfolio/{id})
+	GetPortfolio(c *gin.Context, id PersonID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -43,6 +48,30 @@ func (siw *ServerInterfaceWrapper) Ping(c *gin.Context) {
 	}
 
 	siw.Handler.Ping(c)
+}
+
+// GetPortfolio operation middleware
+func (siw *ServerInterfaceWrapper) GetPortfolio(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id PersonID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetPortfolio(c, id)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -73,17 +102,20 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.GET(options.BaseURL+"/ping", wrapper.Ping)
+	router.GET(options.BaseURL+"/portfolio/:id", wrapper.GetPortfolio)
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/1yRu27dMAyGX8VgOzqW02zaMgboEKBj0UGVGVupJbIibffgwO9e0OdSNJMo8Pb/H88Q",
-	"KTMVLCrgzyBxwhyOMKNIGNFCrsRYNeHHBP4JmWcEDxPOM0ELOZWvWEadwD+2oCe2pGhNZYR9b6Hi7yVV",
-	"HMB/vw/6cS+kn+8YFXarTOWNbMeAEmtiTVTAw3Npnl9fGqWGK61pwGYIGuw/qbJ457Zt68awprIRDdJF",
-	"6pZfDlrQpIfSkR4Cp4cBs+ldscplct/13SPsLRBjCZzAw1PXd0/QAgedDuuOzYc/w4hqj2EJpuxlAA+v",
-	"ljSLwlTkAutL39sTqSiWoycwzykeXe5dbPUNu0WfK76Bh0/u313c9SjuxuvA8z+Wb0uMKHIgliXnUE9X",
-	"QY1O2AjWFas17n8DAAD//z2tTyfyAQAA",
+	"H4sIAAAAAAAC/8STzW7cIBDHXwVNeyRm09y4RYpUrdTDqu0tyoGaWZt0YSiMvY0sv3sF3rWTfpx7wni+",
+	"/vObYYKWfKSAgTPoCaJJxiNjWm6YMoX9Q/m2mNvkIjsKoOFrj2Kxiv0DSHDlZzTcg4RgPIIGZ0FCwh+D",
+	"S2hBcxpQQm579Kbkw5/GxxOCvpXAL7FGBMYOE8zzfPWsMjzmbDqsihJFTOzwd8OaDno8nQgkeBc+Yei4",
+	"f10ic3Khg1Jgk/a4JnpaHenbM7a8SHHhSH8iuA/i/rAXTCImGp1FYQ2bcu+ZY9ZKnc/npjOjC2cim5uW",
+	"muG7AgnsuCrt6MZEd2PRF70jprxk3jW75hZmCRQxmOhAw12za+5AVsS1dRVLH3qCDrkcBYspyvYWNByK",
+	"sbSYI4W8wPqw25WjpcAYaoyJ8eTaGqWecyk9vRrQ+4RH0PBObRuiLkNRV14Vz1ssX4a2xZwr4jx4b9LL",
+	"RZDgHkXGNNYRS1CREh/p5EhNzs7/bOYj8uHqWRFsK/r4d5mbi1pXeH76Pzw+Iw8poBVbD2/RLA4VzgpE",
+	"0FEY0bkRw+WZldTzrwAAAP//kG4n864DAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
